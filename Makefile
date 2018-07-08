@@ -5,18 +5,18 @@ archs ?= amd64 arm32v6 arm64v8 aarch64
 
 .PHONY: all build publish latest
 all: build publish latest
-build: 
+qemu-aarch64-static:
+	cp /usr/bin/qemu-aarch64-static .
+build: qemu-aarch64-static
 	$(foreach arch,$(archs), \
 		a=$$(echo $(arch) | awk -F"arm" '{print $$2}'); \
 		if [ $(arch) = aarch64 ]; then a=arm; fi; \
 		cat Dockerfile.builder > Dockerfile; \
+		cat docker/$(arch)/Dockerfile.template >> Dockerfile; \
+		cat Dockerfile.common >> Dockerfile; \
 		if [ "$$a" = "" ]; then \
-			cat docker/$(arch)/Dockerfile.template >> Dockerfile; \
-			cat Dockerfile.common >> Dockerfile; \
 			docker build -t jaymoulin/plex:${VERSION}-$(arch) --build-arg ARM=0 --build-arg VERSION=${VERSION} ${CACHE} .;\
 		else \
-			cat docker/$(arch)/Dockerfile.template >> Dockerfile; \
-			cat Dockerfile.common >> Dockerfile; \
 			docker run --rm --privileged multiarch/qemu-user-static:register --reset; \
 			docker build -t jaymoulin/rpi-plex:${VERSION}-$(arch) --build-arg VERSION=${VERSION} ${CACHE} .;\
 		fi; \
